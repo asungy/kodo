@@ -1,17 +1,19 @@
 #[cfg(unix)]
 use std::os::unix::io::FromRawFd;
-use std::os::fd::IntoRawFd;
+use std::os::fd::AsRawFd;
 
 use log::{Record, Level, Metadata};
 use std::fs::File;
 use std::io::{self, Write};
+use std::sync::Mutex;
+use std::cell::UnsafeCell;
 
 /// Destination targets for log outputs.
 pub enum Target {
     /// Outputs to stdout/stderr.
     STD,
     /// Outputs to file descriptor.
-    FILE(File),
+    FILE(Mutex<UnsafeCell<File>>),
 }
 
 pub struct Logger {
@@ -26,7 +28,7 @@ impl Logger {
         let target = match filename {
             Some(filename) => {
                 let f = match File::create(filename) {
-                    Ok(f) => f,
+                    Ok(f) => Mutex::new(UnsafeCell::new(f)),
                     Err(err) => { panic!("{}", err); },
                 };
 
@@ -60,16 +62,15 @@ impl log::Log for Logger {
                         ).as_bytes()
                     ).unwrap()
                 },
-                Target::FILE(_file) => {
-                    // let raw_fd = &file.into_raw_fd();
-                    // let mut f = unsafe { File::from_raw_fd(*raw_fd) };
-                    // write!(
-                    //     &mut f,
-                    //     "[{level}] - {message}\n",
-                    //     level = record.level(),
-                    //     message = record.args(),
-                    // ).unwrap();
-                    todo!("Implement me!");
+                Target::FILE(file) => {
+                    let mut file = file.lock().unwrap();
+                    let mut file = file.get_mut();
+                    write!(
+                        &mut file,
+                        "[{level}] - {message}\n",
+                        level = record.level(),
+                        message = record.args(),
+                    ).unwrap();
                 },
             }
         }
