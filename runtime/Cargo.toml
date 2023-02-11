@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 lazy_static = "1.4"
 log = "0.4"
+num_enum = "0.5"

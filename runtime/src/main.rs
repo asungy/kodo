@@ -13,7 +13,7 @@ use log::{
 use lazy_static::lazy_static;
 
 lazy_static! {
-    static ref LOGGER: Logger = Logger::new(Level::Info, Some(String::from("log.txt")));
+    static ref LOGGER: Logger = Logger::new(Level::Info, None);
 }
 
 fn main() -> () {
