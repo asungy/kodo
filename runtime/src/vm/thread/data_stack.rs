@@ -1,5 +1,5 @@
-use std::vec::Vec;
 use error::DataStackError;
+use std::vec::Vec;
 
 pub struct DataStack {
     stack: Vec<u8>,
@@ -10,6 +10,10 @@ impl DataStack {
         DataStack {
             stack: Vec::new(),
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.stack.len()
     }
 
     pub fn pop8(&mut self) -> Result<u8, DataStackError> {
@@ -23,6 +27,10 @@ impl DataStack {
                 })
             },
         }
+    }
+
+    pub fn push8(&mut self, byte: u8) -> () {
+        self.stack.push(byte);
     }
 }
 
