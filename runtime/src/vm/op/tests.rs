@@ -2,6 +2,7 @@ use crate::vm::op::{
     error::{
         InstructionFormatError,
         OpExecuteError,
+        OperationError,
     },
     self,
 };
@@ -42,13 +43,25 @@ mod byte_op {
         let mut data = DataStack::new();
         let error = match op::execute(&bytes, &mut data).unwrap_err() {
             OpExecuteError::InstructionFormatError { error } => error,
-            _ => { unreachable!("Expected OpExecuteError::OperationError.") },
+            _ => { unreachable!("Expected OpExecuteError::InstructionFormatError.") },
         };
         assert_eq!(error, InstructionFormatError::NotEnoughBytes {
             raw_opcode: 0x00,
             min: 4,
             actual: 3,
         });
+    }
+
+    /// Negative test for Add8 overflow error.
+    #[test]
+    fn add8_overflow() {
+        let bytes = VecDeque::<u8>::from([0x00, 0x00, 0xff, 0x02]);
+        let mut data = DataStack::new();
+        let error = match op::execute(&bytes, &mut data).unwrap_err() {
+            OpExecuteError::OperationError { error } => error,
+            _ => { unreachable!("Expected OpExecuteError::OperationError.") },
+        };
+        assert_eq!(error, OperationError::Add8Overflow{addend1: 0xff, addend2: 0x02});
     }
 }
 
