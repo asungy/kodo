@@ -18,6 +18,7 @@ pub(self) type OpCodeRepr = u16;
 const OPCODE_LENGTH: usize = 2;
 
 /// Contains information regarding changes to VM after executing an instruction.
+#[derive(Debug, Copy, Clone)]
 pub(crate) struct Delta {
     /// Instruction bytes consumed.
     inst_bytes_consumed: usize,
