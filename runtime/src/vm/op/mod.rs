@@ -12,6 +12,7 @@ use std::collections::VecDeque;
 #[repr(u16)]
 enum OpCode {
     Add8 = 0, // 8-bit addition
+    Add16 = 1, // 16-bit addition
 }
 
 pub(self) type OpCodeRepr = u16;
@@ -73,6 +74,28 @@ pub(crate) fn execute(bytes: &VecDeque<u8>, data: &mut DataStack) -> Result<Delt
                 });
             }
             data.push8(sum);
+
+            consumed
+        },
+        Ok(OpCode::Add16) => {
+            let consumed = check_bytes_len(bytes, raw_opcode, 6);
+            if consumed.is_err() {
+                return Err(consumed.unwrap_err());
+            }
+            let consumed = consumed.unwrap();
+
+            let addend1 = (u16::from(bytes[2]) << 8) | u16::from(bytes[3]);
+            let addend2 = (u16::from(bytes[4]) << 8) | u16::from(bytes[5]);
+            let (sum, overflow) =addend1.overflowing_add(addend2);
+            if overflow {
+                return Err(OpExecuteError::OperationError {
+                    error: OperationError::Add16Overflow {
+                        addend1,
+                        addend2,
+                    }
+                });
+            }
+            data.push16(sum);
 
             consumed
         },

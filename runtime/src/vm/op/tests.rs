@@ -9,6 +9,7 @@ use crate::vm::op::{
 use crate::vm::thread::data_stack::DataStack;
 use std::collections::VecDeque;
 
+/// Contains unit tests for 8-bit operations.
 #[cfg(test)]
 mod byte_op {
     use super::*;
@@ -22,8 +23,8 @@ mod byte_op {
             // extra random bytes
             0xe1, 0xff, 0x53, 0xbf,
         ]);
-        let mut data_stack = DataStack::new();
-        let option = op::execute(&bytes, &mut data_stack);
+        let mut data = DataStack::new();
+        let option = op::execute(&bytes, &mut data);
         assert!(option.is_ok());
 
         // Test Result value
@@ -33,7 +34,7 @@ mod byte_op {
 
         // Check data stack
         // 21 + 3 = 24 (unsigned)
-        assert_eq!(data_stack.pop8().unwrap(), 0x18);
+        assert_eq!(data.pop8().unwrap(), 0x18);
     }
 
     /// Negative test for Add8 NotEnoughBytes error.
@@ -65,3 +66,33 @@ mod byte_op {
     }
 }
 
+/// Contains unit tests for 16-bit operations.
+#[cfg(test)]
+mod word_op {
+    use super::*;
+
+    /// Positive test for Add16 opcode.
+    #[test]
+    fn add16() {
+        let bytes = VecDeque::<u8>::from([
+            // Add16 opcode
+            0x00, 0x01,
+            // 845 (0x034d)
+            0x03, 0x4d,
+            // 1112 (0x0458)
+            0x04, 0x58,
+        ]);
+        let mut data = DataStack::new();
+        let option = op::execute(&bytes, &mut data);
+        assert!(option.is_ok());
+
+        // Test Result value
+        let delta = option.unwrap();
+        assert_eq!(delta.inst_bytes_consumed, 6);
+        assert_eq!(delta.data_bytes_pushed, 2);
+
+        // Check data stack
+        // 845 + 1112 = 1957 (unsigned)
+        assert_eq!(data.pop16().unwrap(), 0x07a5);
+    }
+}
