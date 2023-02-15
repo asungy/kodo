@@ -41,16 +41,40 @@ impl DataStack {
             });
         }
 
-        let result = u16::from(self.stack.pop().unwrap());
-        let result = (u16::from(self.stack.pop().unwrap()) << 8) | result;
+        let result = u16::from(self.stack.pop().unwrap()) |
+                    (u16::from(self.stack.pop().unwrap()) << 8);
 
         Ok(result)
     }
 
     pub(in crate::vm) fn push16(&mut self, word: u16) -> () {
         let bytes = word.to_be_bytes();
-        self.stack.push(bytes[0]);
-        self.stack.push(bytes[1]);
+        for i in 0..2 {
+            self.stack.push(bytes[i]);
+        }
+    }
+
+    pub(in crate::vm) fn pop32(&mut self) -> Result<u32, DataStackError> {
+        if self.len() < 4 {
+            return Err(DataStackError::NotEnoughBytes {
+                attempt: 4,
+                remaining: self.len(),
+            });
+        }
+
+        let result = u32::from(self.stack.pop().unwrap()) |
+                    (u32::from(self.stack.pop().unwrap()) << 8) |
+                    (u32::from(self.stack.pop().unwrap()) << 16) |
+                    (u32::from(self.stack.pop().unwrap()) << 24);
+
+        Ok(result)
+    }
+
+    pub(in crate::vm) fn push32(&mut self, double_word: u32) -> () {
+        let bytes = double_word.to_be_bytes();
+        for i in 0..4 {
+            self.stack.push(bytes[i]);
+        }
     }
 }
 
@@ -111,11 +135,35 @@ mod tests {
         assert_eq!(error, DataStackError::NotEnoughBytes { attempt: 2, remaining: 0, });
     }
 
+    /// Positive test for push16.
     #[test]
-    fn push16() {
+    fn push16_positive() {
         let mut data = DataStack::new();
         data.push16(0x1ea5);
         assert_eq!(data.stack[0], 0x1e);
         assert_eq!(data.stack[1], 0xa5);
     }
+
+    /// Positive test for pop32.
+    #[test]
+    fn pop32_positive() {
+        let mut data = DataStack::new();
+        data.push8(0x12);
+        data.push8(0x34);
+        data.push8(0x56);
+        data.push8(0x78);
+        assert_eq!(data.pop32().unwrap(), 0x12345678);
+        assert_eq!(data.len(), 0);
+    }
+
+    /// Positive test for push32.
+    #[test]
+    fn push32_positive() {
+        let mut data = DataStack::new();
+        data.push32(0x12345678);
+        assert_eq!(data.stack[0], 0x12);
+        assert_eq!(data.stack[1], 0x34);
+        assert_eq!(data.stack[2], 0x56);
+        assert_eq!(data.stack[3], 0x78);
+   }
 }

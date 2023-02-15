@@ -11,8 +11,9 @@ use std::collections::VecDeque;
 #[derive(TryFromPrimitive)]
 #[repr(u16)]
 enum OpCode {
-    Add8 = 0, // 8-bit addition
+    Add8 = 0,  // 8-bit addition
     Add16 = 1, // 16-bit addition
+    Add32 = 2, // 32-bit addition
 }
 
 pub(self) type OpCodeRepr = u16;
@@ -86,7 +87,7 @@ pub(crate) fn execute(bytes: &VecDeque<u8>, data: &mut DataStack) -> Result<Delt
 
             let addend1 = (u16::from(bytes[2]) << 8) | u16::from(bytes[3]);
             let addend2 = (u16::from(bytes[4]) << 8) | u16::from(bytes[5]);
-            let (sum, overflow) =addend1.overflowing_add(addend2);
+            let (sum, overflow) = addend1.overflowing_add(addend2);
             if overflow {
                 return Err(OpExecuteError::OperationError {
                     error: OperationError::Add16Overflow {
@@ -96,6 +97,36 @@ pub(crate) fn execute(bytes: &VecDeque<u8>, data: &mut DataStack) -> Result<Delt
                 });
             }
             data.push16(sum);
+
+            consumed
+        },
+        Ok(OpCode::Add32) => {
+            let consumed = check_bytes_len(bytes, raw_opcode, 10);
+            if consumed.is_err() {
+                return Err(consumed.unwrap_err());
+            }
+            let consumed = consumed.unwrap();
+
+            let addend1 = (u32::from(bytes[2]) << 24) |
+                          (u32::from(bytes[3]) << 16) |
+                          (u32::from(bytes[4]) << 8)  |
+                           u32::from(bytes[5]);
+
+            let addend2 = (u32::from(bytes[6]) << 24) |
+                          (u32::from(bytes[7]) << 16) |
+                          (u32::from(bytes[8]) << 8)  |
+                           u32::from(bytes[9]);
+
+            let (sum, overflow) = addend1.overflowing_add(addend2);
+            if overflow {
+                return Err(OpExecuteError::OperationError {
+                    error: OperationError::Add32Overflow {
+                        addend1,
+                        addend2,
+                    }
+                });
+            }
+            data.push32(sum);
 
             consumed
         },

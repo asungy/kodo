@@ -96,3 +96,34 @@ mod word_op {
         assert_eq!(data.pop16().unwrap(), 0x07a5);
     }
 }
+
+/// Contains unit tests for 32-bit operations.
+#[cfg(test)]
+mod double_word_op {
+    use super::*;
+
+    /// Positive test for Add32 opcode.
+    #[test]
+    fn add32() {
+        let bytes = VecDeque::<u8>::from([
+            // Add32 opcode
+            0x00, 0x02,
+            // 1,125,364,592 (43 13 B3 70)
+            0x43, 0x13, 0xb3, 0x70,
+            // 124,928,165 (07 72 40 A5)
+            0x07, 0x72, 0x40, 0xa5,
+        ]);
+        let mut data = DataStack::new();
+        let option = op::execute(&bytes, &mut data);
+        assert!(option.is_ok());
+
+        // Test Result value
+        let delta = option.unwrap();
+        assert_eq!(delta.inst_bytes_consumed, 10);
+        assert_eq!(delta.data_bytes_pushed, 4);
+
+        // Check data stack
+        // 1,125,364,592 + 124,928,165 = 1,250,292,757 (unsigned)
+        assert_eq!(data.pop32().unwrap(), 0x4a85f415);
+    }
+}

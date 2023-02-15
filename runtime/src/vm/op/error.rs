@@ -11,7 +11,11 @@ pub(crate) enum OperationError {
     Add16Overflow {
         addend1: u16,
         addend2: u16,
-    }
+    },
+    Add32Overflow {
+        addend1: u32,
+        addend2: u32,
+    },
 }
 
 impl Error for OperationError{}
@@ -31,6 +35,14 @@ impl fmt::Display for OperationError {
                 write!(
                     f,
                     "Performing 16-bit addition on {addend1} and {addend2} causes overflow.",
+                    addend1 = addend1,
+                    addend2 = addend2,
+                )
+            },
+            OperationError::Add32Overflow { addend1, addend2 } => {
+                write!(
+                    f,
+                    "Performing 32-bit addition on {addend1} and {addend2} causes overflow.",
                     addend1 = addend1,
                     addend2 = addend2,
                 )
