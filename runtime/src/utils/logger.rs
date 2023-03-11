@@ -1,7 +1,3 @@
-#[cfg(unix)]
-use std::os::unix::io::FromRawFd;
-use std::os::fd::AsRawFd;
-
 use log::{Record, Level, Metadata};
 use std::fs::File;
 use std::io::{self, Write};
